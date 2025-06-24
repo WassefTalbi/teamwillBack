@@ -1,0 +1,29 @@
+package Esprit.tn.EspritJobGetaway.Service;
+
+import Esprit.tn.EspritJobGetaway.Entity.Role;
+import Esprit.tn.EspritJobGetaway.exception.RoleExistsExecption;
+import Esprit.tn.EspritJobGetaway.Repository.RoleRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+public class RoleService {
+    private final RoleRepository roleRepository;
+    public Role addRole(Role role){
+        Optional<Role> findrole= roleRepository.findByRoleType(role.getRoleType());
+        if (findrole.isPresent()){
+            throw new RoleExistsExecption("role is exist");
+        }
+
+        return roleRepository.save(role);
+    }
+    public List<Role> findAll(){
+        List<Role>  roles= roleRepository.findAll();
+        return roles;
+    }
+
+}
