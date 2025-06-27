@@ -34,11 +34,22 @@ public class UserController {
         return userService.getUserByEmail(email);
     }
 
+    @GetMapping("/allRecruteur")
+    public List<User> getAllRecruteur(){
+        return userService.getAllRecruteur();
+    }
+    @GetMapping("/allRh")
+    public List<User> getAllRh(){
+        return userService.getAllRh();
+    }
+    @GetMapping("/allCondidat")
+    public List<User> getAllCondidat(){
+        return userService.getAllCondidat();
+    }
     @GetMapping("/all")
     public List<User> getAllUsers(){
         return userService.getAllUsers();
     }
-
     @PutMapping("/block/{id}")
     public User blockUser(@PathVariable(value = "id") Long idUser){
         return userService.blockedUser(idUser, false);

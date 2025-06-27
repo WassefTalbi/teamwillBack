@@ -39,7 +39,7 @@ public class EspritJobGetawayApplication implements CommandLineRunner {
 
     private void initRolesAndAdmin() {
         if (roleRepository.count() == 0) {
-            Stream.of(RoleType.ADMIN, RoleType.USER, RoleType.COMPANY, RoleType.STAFF)
+            Stream.of(RoleType.ADMIN, RoleType.USER,RoleType.CONDIDAT,RoleType.RECRUTEUR,RoleType.RH)
                     .forEach(roleType -> {
                         Role role = new Role();
                         role.setRoleType(roleType);
@@ -55,7 +55,7 @@ public class EspritJobGetawayApplication implements CommandLineRunner {
             admin.setRoles(List.of(role));
             admin.setEnabled(true);
             admin.setNonLocked(true);
-            admin.setPassword(passwordEncoder.encode("testTEST#7050"));
+            admin.setPassword(passwordEncoder.encode("testTEST#1234"));
             userRepository.save(admin);
         }
     }

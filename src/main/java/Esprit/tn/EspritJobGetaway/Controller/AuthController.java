@@ -2,11 +2,8 @@ package Esprit.tn.EspritJobGetaway.Controller;
 
 import Esprit.tn.EspritJobGetaway.Service.AuthService;
 import Esprit.tn.EspritJobGetaway.Service.MailConfirmationService;
+import Esprit.tn.EspritJobGetaway.dto.request.*;
 import Esprit.tn.EspritJobGetaway.exception.EmailExistsExecption;
-import Esprit.tn.EspritJobGetaway.dto.request.AuthenticationRequest;
-import Esprit.tn.EspritJobGetaway.dto.request.CustomErrorResponse;
-import Esprit.tn.EspritJobGetaway.dto.request.RegisterRequest;
-import Esprit.tn.EspritJobGetaway.dto.request.RegisterRequestCompany;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -33,7 +30,7 @@ public class AuthController {
     private final MailConfirmationService mailConfirmationService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerStudent(@RequestBody @Valid RegisterRequest registerRequestDTO){
+    public ResponseEntity<?> registerCondidat(@RequestBody @Valid RegisterRequest registerRequestDTO){
         try {
             return new ResponseEntity<>(authenticationService.register(registerRequestDTO), HttpStatus.CREATED);
         }
@@ -45,10 +42,10 @@ public class AuthController {
             return new ResponseEntity<>(new CustomErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    @PostMapping("/registerCompany")
-    public ResponseEntity<?> registerCompany(@RequestBody @Valid RegisterRequestCompany registerRequestDTO){
+    @PostMapping("/registerRecruteur")
+    public ResponseEntity<?> registerRecruteur(@ModelAttribute @Valid RegisterRequestRecruteur registerRequestDTO){
         try {
-            return new ResponseEntity<>(authenticationService.registerCompany(registerRequestDTO), HttpStatus.CREATED);
+            return new ResponseEntity<>(authenticationService.registerRecruteur(registerRequestDTO), HttpStatus.CREATED);
         }
         catch (EmailExistsExecption e){
             return new ResponseEntity<>(new CustomErrorResponse(HttpStatus.CONFLICT.value(), e.getMessage()), HttpStatus.CONFLICT);
@@ -58,10 +55,10 @@ public class AuthController {
             return new ResponseEntity<>(new CustomErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    @PostMapping("/registerStaff")
-    public ResponseEntity<?> registerStaff(@RequestBody @Valid RegisterRequest registerRequestDTO){
+    @PostMapping("/registerRh")
+    public ResponseEntity<?> registerRh(@ModelAttribute @Valid RegisterRequestRh registerRequestDTO){
         try {
-            return new ResponseEntity<>(authenticationService.registerStaff(registerRequestDTO), HttpStatus.CREATED);
+            return new ResponseEntity<>(authenticationService.registerRh(registerRequestDTO), HttpStatus.CREATED);
         }
         catch (EmailExistsExecption e){
             return new ResponseEntity<>(new CustomErrorResponse(HttpStatus.CONFLICT.value(), e.getMessage()), HttpStatus.CONFLICT);

@@ -7,10 +7,11 @@ import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @Data @AllArgsConstructor @NoArgsConstructor
-public class RegisterRequest {
+public class RegisterRequestRecruteur {
     @Valid
 
 
@@ -30,9 +31,10 @@ public class RegisterRequest {
     @NotBlank(message = "email is required and cannot be blank.")
     @Column(unique = true)
     private String email;
-
-
-
+    @NotBlank(message = "profession  is required and cannot be blank.")
+    private String profession;
+    @NotNull(message = "Photo profile is required.")
+    private MultipartFile photoProfile;
 
 
 }

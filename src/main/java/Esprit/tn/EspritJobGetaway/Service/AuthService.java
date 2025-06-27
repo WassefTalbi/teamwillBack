@@ -7,11 +7,11 @@ import Esprit.tn.EspritJobGetaway.Enum.RoleType;
 import Esprit.tn.EspritJobGetaway.Repository.RoleRepository;
 import Esprit.tn.EspritJobGetaway.Repository.UserRepository;
 import Esprit.tn.EspritJobGetaway.dto.request.RegisterRequest;
-import Esprit.tn.EspritJobGetaway.dto.request.RegisterRequestCompany;
+import Esprit.tn.EspritJobGetaway.dto.request.RegisterRequestRecruteur;
+import Esprit.tn.EspritJobGetaway.dto.request.RegisterRequestRh;
 import Esprit.tn.EspritJobGetaway.exception.EmailExistsExecption;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailSendException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,6 +24,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -31,6 +34,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import okhttp3.*;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -47,20 +53,52 @@ public class AuthService {
     private final MailConfirmationService mailConfirmationService;
     private  final MailTokenService mailTokenService;
 
-    @Value("${infobip.base-url}")
-    private String INFOBIP_BASE_URL ;
 
-    @Value("${infobip.api-key}")
-    private String INFOBIP_API_KEY ;
-
-    @Value("${infobip.sender-name}")
-    private String INFOBIP_SENDER_NAME ;
     public User register(RegisterRequest registerRequestDTO) {
         try{
             if(userRepository.findByEmail(registerRequestDTO.getEmail()).isPresent()){
                 throw new EmailExistsExecption("Email already exists");
             }
-            Role role=roleRepository.findByRoleType(RoleType.USER).get();
+            Role role=roleRepository.findByRoleType(RoleType.CONDIDAT).get();
+            User user=new User();
+            user.setFirstName(registerRequestDTO.getFirstName());
+            user.setLastName(registerRequestDTO.getLastName());
+            user.setPhone(registerRequestDTO.getMobileNumber());
+            user.setPassword(bCryptPasswordEncoder.encode(registerRequestDTO.getPassword()));
+            user.setEmail(registerRequestDTO.getEmail());
+            user.setEnabled(false);
+            user.setNonLocked(true);
+            user.setRoles(List.of(role));
+            String token = UUID.randomUUID().toString();
+            MailToken confirmationToken = new MailToken(
+                    token,
+                    LocalDateTime.now(),
+                    LocalDateTime.now().plusMinutes(15),
+                    user
+            );
+
+            mailTokenService.saveConfirmationToken(
+                    confirmationToken);
+            String link = "http://localhost:1919/auth/confirm?token=" + token;
+            emailService.sendEmail(
+                    registerRequestDTO.getEmail(),
+                    mailConfirmationService.buildEmail(registerRequestDTO.getFirstName(), link));
+            return userRepository.save(user);
+        }catch (MailSendException mailSendException){
+            throw new MailSendException("Sorry, we couldn't send your email at the moment. Please try again later ");
+        }
+        catch (Exception e){
+            throw new RuntimeException(e.getMessage());
+        }
+
+    }
+
+    public User registerRecruteur(RegisterRequestRecruteur registerRequestDTO) {
+        try{
+            if(userRepository.findByEmail(registerRequestDTO.getEmail()).isPresent()){
+                throw new EmailExistsExecption("Email already exists");
+            }
+            Role role=roleRepository.findByRoleType(RoleType.RECRUTEUR).get();
             User user=new User();
             user.setFirstName(registerRequestDTO.getFirstName());
             user.setLastName(registerRequestDTO.getLastName());
@@ -86,8 +124,8 @@ public class AuthService {
             emailService.sendEmail(
                     registerRequestDTO.getEmail(),
                     mailConfirmationService.buildEmail(registerRequestDTO.getFirstName(), link));
-          //  String photoName= uploadFile(registerRequestDTO.getPhotoProfile());
-            //user.setPhotoProfile(photoName);
+            String photoName= uploadFile(registerRequestDTO.getPhotoProfile());
+            user.setPhotoProfile(photoName);
             return userRepository.save(user);
         }catch (MailSendException mailSendException){
             throw new MailSendException("Sorry, we couldn't send your email at the moment. Please try again later ");
@@ -98,60 +136,17 @@ public class AuthService {
 
     }
 
-    public User registerCompany(RegisterRequestCompany registerRequestDTO) {
+    public User registerRh(RegisterRequestRh registerRequestDTO) {
         try{
             if(userRepository.findByEmail(registerRequestDTO.getEmail()).isPresent()){
                 throw new EmailExistsExecption("Email already exists");
             }
-            Role role=roleRepository.findByRoleType(RoleType.COMPANY).get();
-            User user=new User();
-            user.setCompanyName(registerRequestDTO.getCompanyName());
-            user.setCompanyAddress(registerRequestDTO.getCompanyAddress());
-            user.setPhone(registerRequestDTO.getMobileNumber());
-            user.setProfession(registerRequestDTO.getProfession());
-            user.setPassword(bCryptPasswordEncoder.encode(registerRequestDTO.getPassword()));
-            user.setEmail(registerRequestDTO.getEmail());
-            user.setEnabled(false);
-            user.setNonLocked(true);
-
-            user.setRoles(List.of(role));
-            String token = UUID.randomUUID().toString();
-            MailToken confirmationToken = new MailToken(
-                    token,
-                    LocalDateTime.now(),
-                    LocalDateTime.now().plusMinutes(15),
-                    user
-            );
-
-            mailTokenService.saveConfirmationToken(
-                    confirmationToken);
-            String link = "http://localhost:1919/auth/confirm?token=" + token;
-            emailService.sendEmail(
-                    registerRequestDTO.getEmail(),
-                    mailConfirmationService.buildEmail(registerRequestDTO.getCompanyName(), link));
-            //  String photoName= uploadFile(registerRequestDTO.getPhotoProfile());
-            //user.setPhotoProfile(photoName);
-            return userRepository.save(user);
-        }catch (MailSendException mailSendException){
-            throw new MailSendException("Sorry, we couldn't send your email at the moment. Please try again later ");
-        }
-        catch (Exception e){
-            throw new RuntimeException(e.getMessage());
-        }
-
-    }
-
-    public User registerStaff(RegisterRequest registerRequestDTO) {
-        try{
-            if(userRepository.findByEmail(registerRequestDTO.getEmail()).isPresent()){
-                throw new EmailExistsExecption("Email already exists");
-            }
-            Role role=roleRepository.findByRoleType(RoleType.STAFF).get();
+            Role role=roleRepository.findByRoleType(RoleType.RH).get();
             User user=new User();
             user.setFirstName(registerRequestDTO.getFirstName());
             user.setLastName(registerRequestDTO.getLastName());
             user.setPhone(registerRequestDTO.getMobileNumber());
-            user.setProfession(registerRequestDTO.getProfession());
+
             user.setPassword(bCryptPasswordEncoder.encode(registerRequestDTO.getPassword()));
             user.setEmail(registerRequestDTO.getEmail());
             user.setEnabled(false);
@@ -172,8 +167,8 @@ public class AuthService {
             emailService.sendEmail(
                     registerRequestDTO.getEmail(),
                     mailConfirmationService.buildEmail(registerRequestDTO.getFirstName(), link));
-            //  String photoName= uploadFile(registerRequestDTO.getPhotoProfile());
-            //user.setPhotoProfile(photoName);
+              String photoName= uploadFile(registerRequestDTO.getPhotoProfile());
+            user.setPhotoProfile(photoName);
             return userRepository.save(user);
         }catch (MailSendException mailSendException){
             throw new MailSendException("Sorry, we couldn't send your email at the moment. Please try again later ");
@@ -183,7 +178,6 @@ public class AuthService {
         }
 
     }
-
 
 
     public Map<String, String> jwtToken(String username, String password)
@@ -248,33 +242,6 @@ public class AuthService {
 
 
 
-    public void sendSms(String to, String body, String senderName) {
-        try {
-            OkHttpClient client = new OkHttpClient();
-
-
-            String jsonBody = String.format(
-                    "{\"messages\":[{\"destinations\":[{\"to\":\"%s\"}],\"from\":\"%s\",\"text\":\"%s\"}]}",
-                    to, senderName, body
-            );
-            RequestBody requestBody = RequestBody.create(jsonBody, okhttp3.MediaType.parse("application/json"));
-
-            Request request = new Request.Builder()
-                    .url(INFOBIP_BASE_URL + "/sms/2/text/advanced")
-                    .method("POST", requestBody)
-                    .addHeader("Authorization", "App " + INFOBIP_API_KEY)
-                    .addHeader("Content-Type", "application/json")
-                    .addHeader("Accept", "application/json")
-                    .build();
-            Response response = client.newCall(request).execute();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-
-
-
     // In AuthService.java
     public void forgotPassword(String email) {
         // Find the user by email
@@ -333,5 +300,29 @@ public class AuthService {
         // Update the user's password
         user.setPassword(bCryptPasswordEncoder.encode(password));
         userRepository.save(user);
+    }
+
+    public String uploadFile(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException(" File  is required ,should select a File");
+        }
+        long currentTimestampSeconds = Instant.now().getEpochSecond();
+        String filename = currentTimestampSeconds+ StringUtils.cleanPath(file.getOriginalFilename());
+        try {
+            if (filename.contains("..")) {
+                throw new IllegalArgumentException("Cannot upload file with relative path outside current directory");
+            }
+            Path uploadDir = Paths.get("src/main/resources/upload");
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+            }
+
+            Path filePath = uploadDir.resolve(filename);
+            Files.copy(file.getInputStream(), filePath);
+            return filename;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to store file " + filename, e);
+        }
     }
 }

@@ -98,9 +98,19 @@ public class UserService {
     public int enableAppUser(String email) {
         return userRepository.enableAppUser(email);
     }
-
     public List<User> getAllUsers() {
-        List<RoleType> roleTypes = Arrays.asList(RoleType.USER, RoleType.COMPANY, RoleType.STAFF);
+        return userRepository.findAll();
+    }
+    public List<User> getAllRecruteur() {
+        List<RoleType> roleTypes = Arrays.asList(RoleType.RECRUTEUR);
+        return userRepository.findByRolesRoleTypeIn(roleTypes);
+    }
+    public List<User> getAllCondidat() {
+        List<RoleType> roleTypes = Arrays.asList(RoleType.CONDIDAT);
+        return userRepository.findByRolesRoleTypeIn(roleTypes);
+    }
+    public List<User> getAllRh() {
+        List<RoleType> roleTypes = Arrays.asList(RoleType.RH);
         return userRepository.findByRolesRoleTypeIn(roleTypes);
     }
 
