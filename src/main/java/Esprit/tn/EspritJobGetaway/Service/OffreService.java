@@ -22,7 +22,9 @@ public class OffreService {
 
     private String getCurrentUserEmail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("email of current user "+authentication.getName());
         return authentication.getName();
+
     }
 
     private Long getCurrentUserId() {
